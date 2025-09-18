@@ -3,25 +3,22 @@ FROM  bh.cr/al_s_apps/librosa-aarch64
 # Ensure package install won't block for user input during build
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Add google repositories
+# Add google repositories (coral-edgetpu-stable for Edge TPU support on Raspberry Pi)
 RUN \
     echo "deb https://packages.cloud.google.com/apt coral-edgetpu-stable main" | sudo tee /etc/apt/sources.list.d/coral-edgetpu.list && \
-    curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add - && \
-    printf "deb [arch=arm64] https://packages.cloud.google.com/apt mendel-bsp-enterprise-day main \n deb-src https://packages.cloud.google.com/apt mendel-bsp-enterprise-day main" \
-    | tee /etc/apt/sources.list.d/multistrap-bsp.list && \
-    printf "deb [arch=arm64] https://packages.cloud.google.com/apt mendel-day main \n deb-src https://packages.cloud.google.com/apt mendel-day main" \
-    | tee /etc/apt/sources.list.d/multistrap-main.list
+    curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
+    # Removed Mendel-specific repositories (mendel-bsp-enterprise-day and mendel-day) 
+    # as they are not compatible with Raspberry Pi OS and cause APT errors
 
-# Install Coral Dev samples and dependencies libedgetpu-dev removed, libedgetpu1-std now libedgetpu1-legacy-std
+# Install Coral Edge TPU and audio dependencies (Raspberry Pi OS compatible)
+# Removed i.MX specific packages (imx-gpu-viv, weston-imx, imx-board-audio) that are Mendel-only
 RUN \
     apt-get update && apt-get install -y wget \
     python3-edgetpu \
-    imx-gpu-viv \
-    weston-imx \
-    libpulse0=12.2-4+deb10u1 libpulsedsp=12.2-4+deb10u1 \
-    pulseaudio-utils=12.2-4+deb10u1 \
-    pulseaudio=12.2-4+deb10u1 imx-board-audio=5-1 \
-    alsa-utils=1.1.8-2 \
+    libpulse0 libpulsedsp \
+    pulseaudio-utils \
+    pulseaudio \
+    alsa-utils \
     sqlite3
 
 # python3-edgetpu above installs older version of llvmlite, 
@@ -31,8 +28,9 @@ RUN \
 
 WORKDIR /usr/src/app
 
-RUN \
-    find /lib/modules -type f -name 'galcore.ko' -print0 | xargs -0 -I{} cp {} /usr/src/app/galcore.ko
+# Copy galcore.ko driver (for i.MX hardware - not needed on Raspberry Pi)
+# RUN \
+#     find /lib/modules -type f -name 'galcore.ko' -print0 | xargs -0 -I{} cp {} /usr/src/app/galcore.ko
 
 ENV UDEV=1
 
