@@ -1,6 +1,17 @@
 # coral-audio-analysis
 Coral Edge TPU project for analyzing noise pollution using the Coral Dev board or a Raspberry Pi 4 with the Edge TPU. A [full tutorial](https://www.balena.io/blog/analyze-sounds-using-ai-on-the-edge-and-fleet-intelligence-part-1/) on this project is available on our blog.
 
+## Raspberry Pi OS Compatibility
+
+This repository has been adapted to work with Raspberry Pi OS (Debian) by removing references to Mendel Linux repositories that cause APT errors on standard Debian systems. The following changes have been made:
+
+- Removed Mendel-specific repository sources (`mendel-bsp-enterprise-day` and `mendel-day`)
+- Removed i.MX processor specific packages (`imx-gpu-viv`, `weston-imx`, `imx-board-audio`) 
+- Kept Coral Edge TPU repository for Edge TPU functionality on Raspberry Pi
+- Removed hardware-specific driver installations not needed on Raspberry Pi
+
+The application should now install and run successfully on Raspberry Pi OS without "Release file" APT errors.
+
 The on-board mic listens for noises above a certain intensity level. The noises are saved as wav files and then various audio features (such as a spectrogram) are extracted from the sounds and analyzed by a Tensorflow Lite model running on the Edge TPU. The included model is trained to recognize 10 noises from the [UrbanSound8K dataset](https://urbansounddataset.weebly.com/urbansound8k.html) based on patterns in its audio features: air conditioner, car horn, children playing, dog bark, drilling, engine idling, gun shot, jackhammer, siren, and street music. You can view the detected noises and model predictions on a web page hosted on-device.
 
 An optional master node will soon be available that has an S3-compatible object store which can receive manually-classified audio files from the nodes in order to re-train and improve the model for all devices in the fleet.

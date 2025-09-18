@@ -3,32 +3,30 @@ FROM balenalib/coral-dev-ubuntu:bionic
 # Ensure package install won't block for user input during build
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Add google repositories
+# Removed Mendel-specific repositories (mendel-bsp-enterprise-day and mendel-day) 
+# as they are not compatible with Raspberry Pi OS and cause APT errors
+# Only keeping standard Google apt key for potential future use
 RUN \
-    curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add - && \
-    printf "deb [arch=arm64] https://packages.cloud.google.com/apt mendel-bsp-enterprise-day main \n deb-src https://packages.cloud.google.com/apt mendel-bsp-enterprise-day main" \
-    | tee /etc/apt/sources.list.d/multistrap-bsp.list && \
-    printf "deb [arch=arm64] https://packages.cloud.google.com/apt mendel-day main \n deb-src https://packages.cloud.google.com/apt mendel-day main" \
-    | tee /etc/apt/sources.list.d/multistrap-main.list
+    curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
 
-# Install audio, etc...
+# Install audio dependencies (Raspberry Pi OS compatible)
+# Removed i.MX specific packages (imx-gpu-viv, weston-imx, imx-board-audio) that are Mendel-only
 RUN \
     apt-get update && apt-get install -y wget \
     python3-pip \
-    imx-gpu-viv \
-    weston-imx \
-    pulseaudio-utils=12.2-4+deb10u1 \
-    libpulse0=12.2-4+deb10u1 libpulsedsp=12.2-4+deb10u1 \
-    pulseaudio=12.2-4+deb10u1 imx-board-audio=5-1 \
-    alsa-utils=1.1.8-2 \
+    pulseaudio-utils \
+    libpulse0 libpulsedsp \
+    pulseaudio \
+    alsa-utils \
     python3-pyaudio
 
 ENV UDEV=1
 
 WORKDIR /usr/src/app
 
-RUN \
-    find /lib/modules -type f -name 'galcore.ko' -print0 | xargs -0 -I{} cp {} /usr/src/app/galcore.ko
+# Copy galcore.ko driver (for i.MX hardware - not needed on Raspberry Pi)
+# RUN \
+#     find /lib/modules -type f -name 'galcore.ko' -print0 | xargs -0 -I{} cp {} /usr/src/app/galcore.ko
 
 COPY *.py ./
 COPY start.sh start.sh
